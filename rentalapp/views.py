@@ -1,33 +1,49 @@
 from django.shortcuts import render,redirect
 from django.http import HttpResponse
-from .models import Property,Profile
+from .models import Property
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate,login,logout
 from .forms import PropertyForm
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 def home(request):
-    properties = Property.objects.all()
+    try:
+        properties = Property.objects.filter(user=request.user)
+    except: 
+        properties = []
     return render(request,'home.html',{'properties':properties})
 
+@login_required(login_url='login')
 def create(request):
     form = PropertyForm()
     if request.method == 'POST':
-        print(request.POST)
-        form = PropertyForm(request.POST,request.FILES)
+        form = PropertyForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return redirect('home')
-    return render(request,'create.html',{'form':form})
+            property = form.save(commit=False)
+            if request.user.is_authenticated:  
+                property.user = request.user  
+                form.save()
+                return redirect('home')
+            else:
+                return HttpResponse("You must be logged in to create a property.")
+    return render(request, 'create.html', {'form': form})
 
 def update(request,id):
     property = Property.objects.get(id=id)
     form = PropertyForm(instance = property)
-    if request.method == 'POST':
-        print(request.POST)
-        form = PropertyForm(request.POST,instance=property)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    return render(request,'create.html',{'form':form})
+    if (property.user == request.user):
+        print(property.user)
+        print(request.user)
+        if request.method == 'POST':
+            print(request.POST)
+            form = PropertyForm(request.POST,request.FILES,instance=property)
+            if form.is_valid():
+                form.save()
+                return redirect('home')
+        return render(request,'create.html',{'form':form})
+    else:
+        return HttpResponse("Arkako update garchhas lathuwa")
 
 def delete(request,id):
     property = Property.objects.get(id=id)
@@ -40,22 +56,31 @@ def details(request,id):
 
 def register(request):
     if request.method == 'POST':
-        firstname = request.POST.get('firstname')
-        middlename = request.POST.get('middlename')
-        lastname = request.POST.get('lastname')
         username = request.POST.get('username')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2',default=password1)
-        contact = request.POST.get('contact')
-        profile = Profile(firstname=firstname,
-                          lastname=lastname,
-                          middlename=middlename,
-                          username=username,
-                          password1=password1,
-                          password2=password2,
-                          contact=contact)
-        profile.save()
+        password = request.POST.get('password')
+        email = request.POST.get('email')
+        User.objects.create_user(username=username,
+                                 password=password,
+                                 email=email)
         return redirect('home')
-    return render(request,'register.html',)
+    return render(request,'register.html')
+
+def loginn(request):
+    if request.method=='POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(username=username,
+                            password=password)
+        print(user)
+        if user is not None:
+            login(request,user)
+            return redirect('home')
+    return render(request,'login.html')
+
+def logoutt(request):
+    logout(request)
+    return redirect('home')
+
+
 
  

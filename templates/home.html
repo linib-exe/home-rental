@@ -71,6 +71,7 @@
             </form>
         </div>
     </div>
+    <h5>Hello,{{user.username}}</h5>
 </nav>
 
 <div class="container">
@@ -81,8 +82,9 @@
             <div class="col-md-4">
                 <div class="card" style="width: 18rem;">
                     <img src="{{ property.image.url }}" class="card-img-top" alt="...">
+                {% comment %} <img src="{% url property.image.url %}" class = "card-img-top"> {% endcomment %}
                     <div class="card-body">
-                       <a href="/details/{{ property.id }}"><h5 class="card-title">{{property.title}}</h5></a>
+                       <a href="{% url 'details' property.id %}"><h5 class="card-title">{{property.title}}</h5></a>
                         <p class="card-text">{{property.description}}</p>
                         <a href="#" class="btn btn-primary">Book Now</a>
                     </div>
